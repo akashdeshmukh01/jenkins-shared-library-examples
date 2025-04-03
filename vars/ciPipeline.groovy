@@ -1,14 +1,18 @@
 def call() {
     pipeline {
         agent any
-        environment {
-            CONFIG = loadParameters() // Read the YAML file once
-        }
         stages {
+            stage('Load Parameters') {
+                steps {
+                    script {
+                        CONFIG = loadParameters() // Read the YAML file
+                    }
+                }
+            }
             stage('Checkout') {
                 steps {
                     script {
-                        checkoutCode() // Calling shared library function for code checkout
+                        checkoutCode()
                     }
                 }
             }
