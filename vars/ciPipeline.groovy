@@ -26,7 +26,7 @@ def call() {
             stage('Build Docker Image') {
                 steps {
                     script {
-                        buildDockerImage()
+                        buildDockerImage('my-image')
                     }
                 }
             }
