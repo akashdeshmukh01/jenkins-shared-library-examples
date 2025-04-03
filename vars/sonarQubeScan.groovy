@@ -3,7 +3,7 @@ def call(Map sonarConfig) {
         error "Invalid or missing SonarQube configuration!"
     }
 
-    withSonarQubeEnv('SonarQube') {
+    withSonarQubeEnv('sonarQube') {
         sh """
             sonar-scanner \
             -Dsonar.projectKey=${sonarConfig.projectKey} \
