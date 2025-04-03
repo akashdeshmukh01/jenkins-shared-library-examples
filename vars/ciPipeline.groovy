@@ -2,7 +2,7 @@ def call() {
     pipeline {
         agent any
         environment {
-            CONFIG = readYaml(file: 'parameter.yaml') // Read the YAML file once
+            CONFIG = loadParameters() // Read the YAML file once
         }
         stages {
             stage('Checkout') {
