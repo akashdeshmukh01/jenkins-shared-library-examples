@@ -1,6 +1,13 @@
 def call() {
     pipeline {
         agent any
+
+        parameters {
+            booleanParam(name: 'RUN_SONARQUBE', defaultValue: true, description: 'Check to run SonarQube scan')
+            booleanParam(name: 'RUN_TRIVY', defaultValue: true, description: 'Check to run Trivy scan')
+            choice(name: 'IMAGE', choices: ['my-image:latest', 'my-image:v1'], description: 'Choose the image to scan')
+        }
+
         stages {
             stage('Load Parameters') {
                 steps {
@@ -17,6 +24,9 @@ def call() {
                 }
             }
             stage('SonarQube Analysis') {
+                when {
+                    expression { return params.RUN_SONARQUBE } // Run if SonarQube is selected
+                }
                 steps {
                     script {
                         sonarQubeScan(CONFIG.sonarqube) // Pass SonarQube config
@@ -31,13 +41,16 @@ def call() {
                 }
             }
             stage('Trivy Scan') {
-    steps {
-        script {
-            def imageName = "my-image"  // Set your image name here
-            trivyScan(imageName)  // Pass the image name as a string
-        }
-    }
-}
+                when {
+                    expression { return params.RUN_TRIVY } // Run if Trivy is selected
+                }
+                steps {
+                    script {
+                        def imageName = params.IMAGE // Get the image name from parameters
+                        trivyScan(imageName) // Run Trivy scan on the selected image
+                    }
+                }
+            }
             stage('Push to ECR') {
                 steps {
                     script {
