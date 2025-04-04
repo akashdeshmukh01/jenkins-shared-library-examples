@@ -31,12 +31,13 @@ def call() {
                 }
             }
             stage('Trivy Scan') {
-                steps {
-                    script {
-                     trivyScan([imageName: CONFIG.trivy, severity: 'HIGH,CRITICAL', ignoreUnfixed: true]) // Pass a map with the config
-                        }
-                    }
-                }
+    steps {
+        script {
+            def imageName = "my-image"  // Set your image name here
+            trivyScan(imageName)  // Pass the image name as a string
+        }
+    }
+}
             stage('Push to ECR') {
                 steps {
                     script {
