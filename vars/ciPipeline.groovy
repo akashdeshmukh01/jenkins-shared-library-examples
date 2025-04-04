@@ -33,10 +33,10 @@ def call() {
             stage('Trivy Scan') {
                 steps {
                     script {
-                        trivyScan(CONFIG.trivy) // Pass Trivy config
+                     trivyScan([imageName: CONFIG.trivy, severity: 'HIGH,CRITICAL', ignoreUnfixed: true]) // Pass a map with the config
+                        }
                     }
                 }
-            }
             stage('Push to ECR') {
                 steps {
                     script {
