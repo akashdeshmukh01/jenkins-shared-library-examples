@@ -28,17 +28,20 @@ def call(Map config = [:]) {
 
     stage('Checkout Code') {
         script {
-            checkoutCode() // shared lib helper
+            // You can use Git SCM directly or define a helper
+            checkout([$class: 'GitSCM',
+                      branches: [[name: '*/master']],
+                      userRemoteConfigs: [[url: 'https://github.com/akashdeshmukh01/NodeJS-web-app.git']]
+            ])
         }
     }
 
     stage('SonarQube Analysis') {
-        when {
-            expression { return params.RUN_SONARQUBE }
-        }
-        steps {
-            script {
+        script {
+            if (params.RUN_SONARQUBE) {
                 sonarQubeScan(CONFIG.sonarqube)
+            } else {
+                echo "Skipping SonarQube scan"
             }
         }
     }
@@ -50,12 +53,11 @@ def call(Map config = [:]) {
     }
 
     stage('Trivy Scan') {
-        when {
-            expression { return params.RUN_TRIVY }
-        }
-        steps {
-            script {
+        script {
+            if (params.RUN_TRIVY) {
                 trivyScan("${env.ECR_URL}/${IMAGE_NAME}:${TAG}")
+            } else {
+                echo "Skipping Trivy scan"
             }
         }
     }
