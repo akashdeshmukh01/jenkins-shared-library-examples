@@ -1,4 +1,4 @@
-def call(String imageName, String tag = 'latest') {
+def call(String fullImageName) {
     script {
         sh "docker build -t ${fullImageName} ."
     }

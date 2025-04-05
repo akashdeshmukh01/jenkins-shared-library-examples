@@ -1,13 +1,10 @@
 def call(Map config = [:]) {
     def terraformFile = config.terraformOutputFile ?: 'tf_outputs.json'
 
-    def IMAGE_NAME = ''
     def CONFIG
     def COMMIT_HASH
     def TAG
     def FULL_IMAGE_NAME
-    def TAG = "build-${COMMIT_HASH}"
-    def FULL_IMAGE_NAME = "${env.ECR_URL}:${TAG}"
 
     stage('Parse Terraform Output') {
         script {
@@ -30,7 +27,6 @@ def call(Map config = [:]) {
 
     stage('Checkout Code') {
         script {
-            // You can use Git SCM directly or define a helper
             checkout([$class: 'GitSCM',
                       branches: [[name: '*/master']],
                       userRemoteConfigs: [[url: 'https://github.com/akashdeshmukh01/NodeJS-web-app.git']]
@@ -50,14 +46,14 @@ def call(Map config = [:]) {
 
     stage('Build Docker Image') {
         script {
-            buildDockerImage(env.ECR_URL, TAG)
+            buildDockerImage(FULL_IMAGE_NAME)
         }
     }
 
     stage('Trivy Scan') {
         script {
             if (params.RUN_TRIVY) {
-                trivyScan("${env.ECR_URL}/${IMAGE_NAME}:${TAG}")
+                trivyScan(FULL_IMAGE_NAME)
             } else {
                 echo "Skipping Trivy scan"
             }
@@ -66,8 +62,7 @@ def call(Map config = [:]) {
 
     stage('Push to ECR') {
         script {
-            pushDockerToECR(env.ECR_URL, TAG)
-
+            pushDockerToECR(FULL_IMAGE_NAME)
         }
     }
 }
