@@ -2,59 +2,86 @@ def call() {
     pipeline {
         agent any
 
+        environment {
+            IMAGE_NAME = 'my-image'
+        }
+
         parameters {
-            booleanParam(name: 'RUN_SONARQUBE', defaultValue: true, description: 'Check to run SonarQube scan')
-            booleanParam(name: 'RUN_TRIVY', defaultValue: true, description: 'Check to run Trivy scan')
-            choice(name: 'IMAGE', choices: ['my-image:latest', 'my-image:v1'], description: 'Choose the image to scan')
+            booleanParam(name: 'RUN_SONARQUBE', defaultValue: true, description: 'Run SonarQube scan')
+            booleanParam(name: 'RUN_TRIVY', defaultValue: true, description: 'Run Trivy scan')
         }
 
         stages {
-            stage('Load Parameters') {
+            stage('Fetch Terraform Output') {
+                steps {
+                    copyArtifacts(projectName: 'terraform-infra-pipeline', selector: lastSuccessful())
+                }
+            }
+
+            stage('Parse Terraform Output') {
                 steps {
                     script {
-                        CONFIG = loadParameters() // Read the YAML file
+                        def outputs = readJSON file: 'tf_outputs.json'
+                        env.ECR_URL = outputs.ecr_repo_url.value
+                        echo "Parsed ECR URL from Terraform output: ${env.ECR_URL}"
                     }
                 }
             }
-            stage('Checkout') {
+
+            stage('Load Parameters') {
+                steps {
+                    script {
+                        CONFIG = loadParameters() // Load from config.yaml (e.g., SonarQube details)
+                        COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                        TAG = "build-${COMMIT_HASH}"
+                        FULL_IMAGE_NAME = "${env.ECR_URL}/${IMAGE_NAME}:${TAG}"
+                        echo "Docker image to be built and pushed: ${FULL_IMAGE_NAME}"
+                    }
+                }
+            }
+
+            stage('Checkout Code') {
                 steps {
                     script {
                         checkoutCode()
                     }
                 }
             }
+
             stage('SonarQube Analysis') {
                 when {
-                    expression { return params.RUN_SONARQUBE } // Run if SonarQube is selected
+                    expression { return params.RUN_SONARQUBE }
                 }
                 steps {
                     script {
-                        sonarQubeScan(CONFIG.sonarqube) // Pass SonarQube config
+                        sonarQubeScan(CONFIG.sonarqube)
                     }
                 }
             }
+
             stage('Build Docker Image') {
                 steps {
                     script {
-                        buildDockerImage('my-image')
+                        buildDockerImage("${env.ECR_URL}/${IMAGE_NAME}", TAG)
                     }
                 }
             }
+
             stage('Trivy Scan') {
                 when {
-                    expression { return params.RUN_TRIVY } // Run if Trivy is selected
+                    expression { return params.RUN_TRIVY }
                 }
                 steps {
                     script {
-                        def imageName = params.IMAGE // Get the image name from parameters
-                        trivyScan(imageName) // Run Trivy scan on the selected image
+                        trivyScan("${env.ECR_URL}/${IMAGE_NAME}:${TAG}")
                     }
                 }
             }
+
             stage('Push to ECR') {
                 steps {
                     script {
-                        pushDockerToECR()
+                        pushDockerToECR(env.ECR_URL, IMAGE_NAME, TAG)
                     }
                 }
             }
