@@ -1,7 +1,7 @@
 def call(Map config = [:]) {
     def terraformFile = config.terraformOutputFile ?: 'tf_outputs.json'
 
-    def IMAGE_NAME = 'my-image'
+    def IMAGE_NAME = ''
     def CONFIG
     def COMMIT_HASH
     def TAG
@@ -21,7 +21,7 @@ def call(Map config = [:]) {
             CONFIG = loadParameters() // load from yaml/json etc.
             COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
             TAG = "build-${COMMIT_HASH}"
-            FULL_IMAGE_NAME = "${env.ECR_URL}/${IMAGE_NAME}:${TAG}"
+            FULL_IMAGE_NAME = "${env.ECR_URL}:${TAG}"
             echo "Docker image to be built and pushed: ${FULL_IMAGE_NAME}"
         }
     }
@@ -48,7 +48,7 @@ def call(Map config = [:]) {
 
     stage('Build Docker Image') {
         script {
-            buildDockerImage("${env.ECR_URL}/${IMAGE_NAME}", TAG)
+            buildDockerImage(env.ECR_URL, TAG)
         }
     }
 
@@ -64,7 +64,8 @@ def call(Map config = [:]) {
 
     stage('Push to ECR') {
         script {
-            pushDockerToECR(env.ECR_URL, IMAGE_NAME, TAG)
+            pushDockerToECR(env.ECR_URL, TAG)
+
         }
     }
 }

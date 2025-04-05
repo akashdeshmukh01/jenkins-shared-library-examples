@@ -1,6 +1,6 @@
 def call(String ecrUrl, String imageName, String tag = "latest") {
     script {
-        def fullImageName = "${ecrUrl}/${imageName}:${tag}"
+        def fullImageName = "${ecrUrl}:${tag}"
         echo "Pushing Docker image to ECR: ${fullImageName}"
 
         withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
