@@ -6,6 +6,8 @@ def call(Map config = [:]) {
     def COMMIT_HASH
     def TAG
     def FULL_IMAGE_NAME
+    def TAG = "build-${COMMIT_HASH}"
+    def FULL_IMAGE_NAME = "${env.ECR_URL}:${TAG}"
 
     stage('Parse Terraform Output') {
         script {
