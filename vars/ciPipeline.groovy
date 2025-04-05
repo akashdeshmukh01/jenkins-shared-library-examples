@@ -1,4 +1,6 @@
-def call() {
+def call(Map config = [:]) {
+    def terraformFile = config.terraformOutputFile ?: 'tf_outputs.json'
+
     pipeline {
         agent any
 
@@ -12,16 +14,11 @@ def call() {
         }
 
         stages {
-            stage('Fetch Terraform Output') {
-                steps {
-                    copyArtifacts(projectName: 'terraform-infra-pipeline', selector: lastSuccessful())
-                }
-            }
-
             stage('Parse Terraform Output') {
                 steps {
                     script {
-                        def outputs = readJSON file: 'tf_outputs.json'
+                        echo "Reading Terraform output from: ${terraformFile}"
+                        def outputs = readJSON file: terraformFile
                         env.ECR_URL = outputs.ecr_repo_url.value
                         echo "Parsed ECR URL from Terraform output: ${env.ECR_URL}"
                     }
@@ -31,7 +28,7 @@ def call() {
             stage('Load Parameters') {
                 steps {
                     script {
-                        CONFIG = loadParameters() // Load from config.yaml (e.g., SonarQube details)
+                        CONFIG = loadParameters() // Custom method to load config.yaml or similar
                         COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         TAG = "build-${COMMIT_HASH}"
                         FULL_IMAGE_NAME = "${env.ECR_URL}/${IMAGE_NAME}:${TAG}"
@@ -43,7 +40,7 @@ def call() {
             stage('Checkout Code') {
                 steps {
                     script {
-                        checkoutCode()
+                        checkoutCode() // Custom method from shared library
                     }
                 }
             }
@@ -54,7 +51,7 @@ def call() {
                 }
                 steps {
                     script {
-                        sonarQubeScan(CONFIG.sonarqube)
+                        sonarQubeScan(CONFIG.sonarqube) // Expects keys like projectKey, etc.
                     }
                 }
             }
