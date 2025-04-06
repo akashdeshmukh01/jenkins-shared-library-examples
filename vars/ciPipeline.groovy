@@ -65,4 +65,13 @@ def call(Map config = [:]) {
             pushDockerToECR(FULL_IMAGE_NAME)
         }
     }
+
+    // Add this final stage to store the image name for CD
+    stage('Export Image Info for CD') {
+        script {
+            writeFile file: 'image_info.json', text: "{\"image\":\"${FULL_IMAGE_NAME}\"}"
+            archiveArtifacts artifacts: 'image_info.json', fingerprint: true
+            echo "Exported image info: ${FULL_IMAGE_NAME}"
+        }
+    }
 }
