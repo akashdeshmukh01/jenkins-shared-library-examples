@@ -5,7 +5,7 @@ def call(Map sonarConfig) {
 
     withCredentials([string(credentialsId: 'sonar-auth-token', variable: 'SONAR_TOKEN')]) {
         withEnv(["PATH+SONAR=/opt/sonar-scanner/bin"]) {
-            withSonarQubeEnv('sonarqube') {
+            withSonarQubeEnv('sonar-scanner') {
                 sh """
                     sonar-scanner \
                       -Dsonar.projectKey=${sonarConfig.projectKey} \
