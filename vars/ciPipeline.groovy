@@ -10,8 +10,8 @@ def call(Map config = [:]) {
         script {
             echo "Reading Terraform output from: ${terraformFile}"
             def outputs = readJSON file: terraformFile
-            env.GCR_URL = outputs.gcr_repo_url.value
-            echo "Parsed GCR URL from Terraform output: ${env.GCR_URL}"
+            env.IMAGE_REPO_URL = outputs.gcr_repo_url?.value ?: outputs.ecr_repo_url?.value
+            echo "Parsed Image Repository URL: ${env.IMAGE_REPO_URL}"
         }
     }
 
@@ -20,7 +20,7 @@ def call(Map config = [:]) {
             CONFIG = loadParameters() // load from yaml/json etc.
             COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
             TAG = "build-${COMMIT_HASH}"
-            FULL_IMAGE_NAME = "${env.GCR_URL}:${TAG}"
+            FULL_IMAGE_NAME = "${env.IMAGE_REPO_URL}:${TAG}"
             echo "Docker image to be built and pushed: ${FULL_IMAGE_NAME}"
         }
     }
@@ -60,13 +60,12 @@ def call(Map config = [:]) {
         }
     }
 
-    stage('Push to GCR') {
+    stage('Push to Registry') {
         script {
-            pushDockerToGCR(FULL_IMAGE_NAME)
+            pushDockerImage(FULL_IMAGE_NAME) // Replaces pushDockerToGCR / pushDockerToECR
         }
     }
 
-    // Add this final stage to store the image name for CD
     stage('Export Image Info for CD') {
         script {
             writeFile file: 'image_info.json', text: "{\"image\":\"${FULL_IMAGE_NAME}\"}"
