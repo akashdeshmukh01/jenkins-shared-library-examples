@@ -1,17 +1,19 @@
 def call(Map sonarConfig) { 
-    if (!sonarConfig || !sonarConfig.projectKey || !sonarConfig.sources || !sonarConfig.hostUrl || !sonarConfig.authToken) {
+    if (!sonarConfig || !sonarConfig.projectKey || !sonarConfig.sources || !sonarConfig.hostUrl) {
         error "Invalid or missing SonarQube configuration!"
     }
 
-    withEnv(["PATH+SONAR=/opt/sonar-scanner/bin"]) {  // Add SonarScanner path to the environment
-        withSonarQubeEnv('sonarqube') {
-            sh """
-                sonar-scanner \
-                -Dsonar.projectKey=${sonarConfig.projectKey} \
-                -Dsonar.sources=${sonarConfig.sources} \
-                -Dsonar.host.url=${sonarConfig.hostUrl} \
-                -Dsonar.login=${sonarConfig.authToken}
-            """
+    withCredentials([string(credentialsId: 'sonar-auth-token', variable: 'SONAR_TOKEN')]) {
+        withEnv(["PATH+SONAR=/opt/sonar-scanner/bin"]) {
+            withSonarQubeEnv('sonarqube') {
+                sh """
+                    sonar-scanner \
+                      -Dsonar.projectKey=${sonarConfig.projectKey} \
+                      -Dsonar.sources=${sonarConfig.sources} \
+                      -Dsonar.host.url=${sonarConfig.hostUrl} \
+                      -Dsonar.login=$SONAR_TOKEN
+                """
+            }
         }
     }
 }
