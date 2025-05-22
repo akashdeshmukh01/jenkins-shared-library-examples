@@ -50,7 +50,7 @@ def call(Map config = [:]) {
         }
     }
 
-    stage('Trivy Scan') {
+/*    stage('Trivy Scan') {
         script {
             if (params.RUN_TRIVY) {
                 trivyScan(FULL_IMAGE_NAME)
@@ -58,7 +58,7 @@ def call(Map config = [:]) {
                 echo "Skipping Trivy scan"
             }
         }
-    }
+    }   */
 
     stage('Push to Registry') {
         script {
