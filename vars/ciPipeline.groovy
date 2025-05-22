@@ -10,8 +10,8 @@ def call(Map config = [:]) {
         script {
             echo "Reading Terraform output from: ${terraformFile}"
             def outputs = readJSON file: terraformFile
-            env.ECR_URL = outputs.ecr_repo_url.value
-            echo "Parsed ECR URL from Terraform output: ${env.ECR_URL}"
+            env.GCR_URL = outputs.gcr_repo_url.value
+            echo "Parsed GCR URL from Terraform output: ${env.GCR_URL}"
         }
     }
 
@@ -20,7 +20,7 @@ def call(Map config = [:]) {
             CONFIG = loadParameters() // load from yaml/json etc.
             COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
             TAG = "build-${COMMIT_HASH}"
-            FULL_IMAGE_NAME = "${env.ECR_URL}:${TAG}"
+            FULL_IMAGE_NAME = "${env.GCR_URL}:${TAG}"
             echo "Docker image to be built and pushed: ${FULL_IMAGE_NAME}"
         }
     }
@@ -60,9 +60,9 @@ def call(Map config = [:]) {
         }
     }
 
-    stage('Push to ECR') {
+    stage('Push to GCR') {
         script {
-            pushDockerToECR(FULL_IMAGE_NAME)
+            pushDockerToGCR(FULL_IMAGE_NAME)
         }
     }
 
