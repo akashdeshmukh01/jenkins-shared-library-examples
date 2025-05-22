@@ -19,14 +19,16 @@ def call(String fullImageName) {
         } else if (registryUrl.contains("pkg.dev")) {
             echo "Detected Google GCR / Artifact Registry"
             withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                def registryHost = registryUrl.split("/")[0]
+                echo "Docker registry host: ${registryHost}"
                 sh '''
                     echo "Activating GCP service account..."
                     gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
                     
                     echo "Configuring Docker for GCR/Artifact Registry..."
-                    gcloud auth configure-docker ''' + "${registryUrl}" + ''' --quiet
+                    gcloud auth configure-docker ''' + "${registryHost}" + ''' --quiet
 
-                    echo "Pushing Docker image to GCR..."
+                    echo "Pushing Docker image to Artifact Registry..."
                     docker push ''' + "${fullImageName}" + '''
                 '''
             }
