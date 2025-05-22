@@ -20,7 +20,12 @@ def call(Map config = [:]) {
             CONFIG = loadParameters() // load from yaml/json etc.
             COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
             TAG = "build-${COMMIT_HASH}"
-            FULL_IMAGE_NAME = "${env.IMAGE_REPO_URL}:${TAG}"
+
+            // Use image_name from config or fallback to 'backend'
+            def IMAGE_NAME = CONFIG.image_name ?: "backend"
+
+            // Construct full image name with image name included
+            FULL_IMAGE_NAME = "${env.IMAGE_REPO_URL}/${IMAGE_NAME}:${TAG}"
             echo "Docker image to be built and pushed: ${FULL_IMAGE_NAME}"
         }
     }
@@ -50,7 +55,7 @@ def call(Map config = [:]) {
         }
     }
 
-/*    stage('Trivy Scan') {
+    /*stage('Trivy Scan') {
         script {
             if (params.RUN_TRIVY) {
                 trivyScan(FULL_IMAGE_NAME)
@@ -58,7 +63,7 @@ def call(Map config = [:]) {
                 echo "Skipping Trivy scan"
             }
         }
-    }   */
+    }*/
 
     stage('Push to Registry') {
         script {
